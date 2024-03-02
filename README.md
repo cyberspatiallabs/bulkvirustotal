@@ -14,7 +14,7 @@ Reference:  [VirusTotal API V3 Domain Info](https://docs.virustotal.com/referenc
 
 ## Building
 
-  1. Install [go 1.22+](https://go.dev/doc/install)
+  1. [Install go 1.22 or higher](https://go.dev/doc/install).   
 
   2. Then build:
 
@@ -25,6 +25,9 @@ Reference:  [VirusTotal API V3 Domain Info](https://docs.virustotal.com/referenc
 ## Releases
 
 Don't want to compile yourself?  You can grab one of the precompiled github releases [here](https://github.com/cyberspatiallabs/bulkvirustotal/releases).
+
+Note:  Some virus scanners might flag the release binary as a Trojan or other malicious code.  This may be due to the string "virus" or the API use.
+If you don't want to trust the release, install go and build it yourself, its very easy and satisfying to build your own stuff.
 
 ## Usage
 
