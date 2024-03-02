@@ -1,6 +1,6 @@
 # Bulk VirusTotal Tool
 
-**A command line utility for looking up a batch of urls/domains contained in file.**
+**A command line utility for looking up a batch of domains contained in a file using the VirusTotal API V3**
 
 **Lovingly written in Go** ❤️
 
@@ -10,6 +10,7 @@ You can get a VirusTotal API key by signing up for a [free VirusTotal account](h
 
 The code is setup to sleep between indiviudal lookups to not exceed the VT free tier rate limit.
 
+Reference:  [VirusTotal API V3 Domain Info](https://docs.virustotal.com/reference/domain-info)
 
 ## Building
 
