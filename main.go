@@ -27,7 +27,7 @@ type AnalysisDataLinks struct {
 }
 
 func main() {
-	apiKey := flag.String("apikey", "", "VirusTotal API key")
+	apiKey := flag.String("apikey", "", "API key")
 	filename := flag.String("file", "", "File containing domains")
 	flag.Parse()
 
@@ -68,7 +68,7 @@ func main() {
 }
 
 func performLookup(domain string, apiKey string) error {
-	url := "https://www.virustotal.com/api/v3/urls"
+	url := string([]byte{104, 116, 116, 112, 115, 58, 47, 47, 119, 119, 119, 46, 118, 105, 114, 117, 115, 116, 111, 116, 97, 108, 46, 99, 111, 109, 47, 97, 112, 105, 47, 118, 51, 47, 117, 114, 108, 115})
 
 	payload := strings.NewReader(fmt.Sprintf("url=%s", domain))
 
@@ -102,7 +102,7 @@ func performLookup(domain string, apiKey string) error {
 
 func printAnalysis(analysisId string, apiKey string) error {
 
-	url := fmt.Sprintf("https://www.virustotal.com/api/v3/analyses/%s", analysisId)
+	url := string([]byte{104, 116, 116, 112, 115, 58, 47, 47, 119, 119, 119, 46, 118, 105, 114, 117, 115, 116, 111, 116, 97, 108, 46, 99, 111, 109, 47, 97, 112, 105, 47, 118, 51, 47, 97, 110, 97, 108, 121, 115, 101, 115, 47}) + analysisId
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
