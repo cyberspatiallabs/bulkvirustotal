@@ -36,7 +36,7 @@ func main() {
 		Development:       false,
 		DisableCaller:     false,
 		DisableStacktrace: false,
-		Encoding:          "text",
+		Encoding:          "console",
 		EncoderConfig: zapcore.EncoderConfig{
 			TimeKey:       "eventTime",
 			LevelKey:      "level",
@@ -78,6 +78,7 @@ func main() {
 
 	apiKey := flag.String("apikey", "", "VirusTotal API key")
 	filename := flag.String("file", "", "File containing domains")
+	sleepTime := flag.Int("delay", 20, "Delay between API lookups")
 	flag.Parse()
 
 	if *apiKey == "" || *filename == "" {
@@ -106,9 +107,8 @@ func main() {
 				zap.S().Errorf("Error occurred during lookup: %v\n", err)
 			}
 
-			// Wait for 15 seconds between lookups
-			waitTime := time.Duration(15)
-			fmt.Printf("(sleeping to not exceed API throttle)\n")
+			waitTime := time.Duration(*sleepTime)
+
 			time.Sleep(waitTime * time.Second)
 		}
 	}
