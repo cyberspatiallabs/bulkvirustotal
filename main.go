@@ -10,6 +10,9 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type AnalysisResponse struct {
@@ -27,6 +30,52 @@ type AnalysisDataLinks struct {
 }
 
 func main() {
+
+	logger, err := zap.Config{
+		Level:             zap.NewAtomicLevelAt(zap.DebugLevel),
+		Development:       false,
+		DisableCaller:     false,
+		DisableStacktrace: false,
+		Encoding:          "text",
+		EncoderConfig: zapcore.EncoderConfig{
+			TimeKey:       "eventTime",
+			LevelKey:      "level",
+			NameKey:       "logger",
+			CallerKey:     "caller",
+			MessageKey:    "message",
+			StacktraceKey: "stacktrace",
+			LineEnding:    zapcore.DefaultLineEnding,
+			EncodeLevel: func(l zapcore.Level, enc zapcore.PrimitiveArrayEncoder) {
+				switch l {
+				case zapcore.DebugLevel:
+					enc.AppendString("DEBUG")
+				case zapcore.InfoLevel:
+					enc.AppendString("INFO")
+				case zapcore.WarnLevel:
+					enc.AppendString("WARNING")
+				case zapcore.ErrorLevel:
+					enc.AppendString("ERROR")
+				case zapcore.DPanicLevel:
+					enc.AppendString("CRITICAL")
+				case zapcore.PanicLevel:
+					enc.AppendString("ALERT")
+				case zapcore.FatalLevel:
+					enc.AppendString("EMERGENCY")
+				}
+			},
+			EncodeTime:     zapcore.ISO8601TimeEncoder,
+			EncodeDuration: zapcore.SecondsDurationEncoder,
+			EncodeCaller:   zapcore.ShortCallerEncoder,
+		},
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stdout"},
+	}.Build()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	zap.ReplaceGlobals(logger)
+
 	apiKey := flag.String("apikey", "", "VirusTotal API key")
 	filename := flag.String("file", "", "File containing domains")
 	flag.Parse()
@@ -40,19 +89,21 @@ func main() {
 
 	file, err := os.Open(*filename)
 	if err != nil {
-		fmt.Printf("Failed to open file: %v\n", err)
+		zap.S().Errorf("Failed to open file: %v\n", err)
 		return
+
 	}
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
+
 		domain := strings.TrimSpace(scanner.Text())
 		if domain != "" {
 			fmt.Printf("Performing lookup for domain: %s\n", domain)
 			err := performLookup(domain, *apiKey)
 			if err != nil {
-				fmt.Printf("Error occurred during lookup: %v\n", err)
+				zap.S().Errorf("Error occurred during lookup: %v\n", err)
 			}
 
 			// Wait for 15 seconds between lookups
@@ -84,20 +135,38 @@ func performLookup(domain string, apiKey string) error {
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Errorf("%+v", err)
+		zap.S().Errorf("%+v", err)
 		return err
 	}
 
 	defer res.Body.Close()
+
+	code := res.StatusCode
+	if code != 200 {
+		zap.S().Errorf("Status code for url %s was %d", url, code)
+		zap.S().Errorf(res.Status)
+	}
+
 	body, _ := io.ReadAll(res.Body)
 
 	var ar AnalysisResponse
 	err = json.Unmarshal(body, &ar)
 	if err != nil {
+		zap.S().Errorf("%+v", err)
 		return err
 	}
-	printAnalysis(ar.Data.ID, apiKey)
-	return nil
+	if ar.Data.ID == "" {
+
+		zap.S().Errorf("No analysis ID returned for %s", url)
+		zap.S().Errorf("status was %d", res.StatusCode)
+		return nil
+
+	} else {
+
+		printAnalysis(ar.Data.ID, apiKey)
+		return nil
+	}
+
 }
 
 func printAnalysis(analysisId string, apiKey string) error {
@@ -106,7 +175,7 @@ func printAnalysis(analysisId string, apiKey string) error {
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		fmt.Errorf("%+v", err)
+		zap.S().Errorf("%+v", err)
 		return err
 	}
 
@@ -115,14 +184,14 @@ func printAnalysis(analysisId string, apiKey string) error {
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Errorf("%+v", err)
+		zap.S().Errorf("%+v", err)
 		return err
 	}
 
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		fmt.Errorf("%+v", err)
+		zap.S().Errorf("%+v", err)
 		return err
 	}
 
